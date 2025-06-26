@@ -1,1 +1,2 @@
 # RobotBalancer
+This is a personal project that will be worked on over the span of 4 weeks. I will be constructing a 2 wheeled robot that should be able to balance its self using a gyro sensor. This personal project focuses on HW skills whoch involve building circuits breadboard, getting familiar with the arduino NANO, and to apply object oriented programing concpets in a robotics context. 
