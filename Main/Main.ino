@@ -6,8 +6,24 @@
 
 MPU6050 mpu;
 #define IR_RECEIVE_PIN 8
+
 MotorController motor1(1);
 MotorController motor2(2);
+
+float setpoint = -7;      // Desired target value (e.g., angle, speed)
+float input = 0;         // Current value from sensor
+float output = 0;        // Output to actuator (e.g., motor power)
+
+// float Kp = 1.5;
+// float Ki = 1;
+// float Kd = 0.1;
+
+float error;
+float lastError = 0;
+float integral = 0;
+float derivative;
+
+unsigned long lastTime;
 
 void setup() {
   Serial.begin(9600); // // Establish serial communication
@@ -19,6 +35,7 @@ void setup() {
     while (1);
   }
   Serial.println("MPU6050 ready");
+  lastTime = millis();
 }
 float getTiltAngle() {
   static unsigned long lastTime = millis();
@@ -51,8 +68,23 @@ float getTiltAngle() {
 
   return angle;
 }
+int computePid(float Kp,float Ki, float Kd){
+  input = getTiltAngle();
+  unsigned long now = millis();
+  float deltaTime = (now - lastTime) / 1000.0; // convert ms to seconds
+  lastTime = now;
+  error = setpoint - input;
+  integral += error * deltaTime;
+  derivative = (error - lastError) / deltaTime;
 
+  output = Kp * error + Ki * integral + Kd * derivative;
+  output = constrain(output, -255, 255);
+  lastError = error;
+  return output;
+}
 void loop() {
+
+  
     if (IrReceiver.decode()) {
     uint32_t rawCode = IrReceiver.decodedIRData.decodedRawData;
 
@@ -81,8 +113,19 @@ void loop() {
       motor2.moveMotor(1, 0);
     }
     IrReceiver.resume(); // Ready for next signal
-    
   }
+  int nSpeed = computePid(14 , 13.4 , 15); // Kp - Ki - Kd
+  int direction = 1;
+  if(nSpeed < 0)
+  {
+    direction = 0;
+    nSpeed = abs(nSpeed);
+  }
+  motor1.moveMotor(direction, nSpeed);
+  motor2.moveMotor(direction, nSpeed);
   Serial.print("Angle = ");
-    Serial.println(getTiltAngle());
+  Serial.print(getTiltAngle());  // Kp - Ki - Kd
+  Serial.print(" | ");
+  Serial.print("Output = ");
+  Serial.println(nSpeed);  // Kp - Ki - Kd
 }
