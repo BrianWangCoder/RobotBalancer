@@ -25,7 +25,7 @@ float getTiltAngle() {
   static float angle = 0;
 
   float alpha = 0.96;
-  float accY, accZ, gyroY;
+  float accX, accZ, gyroX;
   float accAngle, elapsedTime;
 
   // Time step
@@ -34,23 +34,24 @@ float getTiltAngle() {
   lastTime = currentTime;
 
   // Read raw values
-  int16_t accYraw = mpu.getAccelerationY();
+  int16_t accXraw = mpu.getAccelerationX();
   int16_t accZraw = mpu.getAccelerationZ();
-  int16_t gyroYraw = mpu.getRotationY();
+  int16_t gyroXraw = mpu.getRotationX();
 
   // Convert to real-world units
-  accY = accYraw / 16384.0;
+  accX = accXraw / 16384.0;
   accZ = accZraw / 16384.0;
-  gyroY = gyroYraw / 131.0;
+  gyroX = gyroXraw / 131.0;
 
   // Calculate tilt angle from accelerometer
-  accAngle = atan2(accY, accZ) * 180 / PI;
+  accAngle = atan2(accX, accZ) * 180 / PI;
 
   // Complementary filter
-  angle = alpha * (angle + gyroY * elapsedTime) + (1 - alpha) * accAngle;
+  angle = alpha * (angle + gyroX * elapsedTime) + (1 - alpha) * accAngle;
 
   return angle;
 }
+
 void loop() {
     if (IrReceiver.decode()) {
     uint32_t rawCode = IrReceiver.decodedIRData.decodedRawData;
