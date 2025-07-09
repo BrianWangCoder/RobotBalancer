@@ -10,7 +10,7 @@ MPU6050 mpu;
 MotorController motor1(1);
 MotorController motor2(2);
 
-float setpoint = -4;      // Desired target value 
+float setpoint = 2;      // Desired target value 
 float input = 0;         // Current value from sensor
 float output = 0;        // Output to actuator 
 
@@ -110,7 +110,7 @@ void loop() {
     }
     IrReceiver.resume(); // Ready for next signal
   }
-  int nSpeed = computePid(150 , 1.3 , 40); // Kp - Ki - Kd
+  int nSpeed = computePid(160 , 0 , 100); // Kp - Ki - Kd
   int direction = 1;
   if(nSpeed < 0)
   {
