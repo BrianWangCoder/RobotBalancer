@@ -26,8 +26,8 @@ float derivative;
 unsigned long lastTime;
 
 void setup() {
-  // Serial.begin(9600); // // Establish serial communication
-  IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK); // Start the receiver
+  // Serial.begin(115200); // // Establish serial communication
+  // IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK); // Start the receiver
   Wire.begin();
   mpu.initialize();
   // if (!mpu.testConnection()) {
@@ -51,7 +51,7 @@ float getTiltAngle(float gyroRate, float deltaTime) {
 
   angle = alpha * (angle + gyroRate * deltaTime) + (1 - alpha) * accAngle;
   // Serial.print("Angle = ");
-  // Serial.print(angle);  // Kp - Ki - Kd
+  // Serial.println(angle);  // Kp - Ki - Kd
   return angle;
 }
 
@@ -65,15 +65,17 @@ int computePid(float Kp, float Ki, float Kd) {
   float gyroRate = gyroXraw / 131.0;
 
   input = getTiltAngle(gyroRate, deltaTime);
-
-  error = setpoint - input;
   
+  error = (setpoint - input) * 3;
+  if (abs(error) < 2.0) {
+    return 0;
+  }
     integral += error * deltaTime;
     derivative = -gyroRate; // use gyro as angular velocity for Kd
 
     output = Kp * error + Ki * integral + Kd * derivative;
     output = constrain(output, -255, 255);
-  lastError = error;
+  // lastError = error;
 
   return output;
 }
@@ -81,36 +83,36 @@ int computePid(float Kp, float Ki, float Kd) {
 void loop() {
 
   
-    if (IrReceiver.decode()) {
-    uint32_t rawCode = IrReceiver.decodedIRData.decodedRawData;
+  //   if (IrReceiver.decode()) {
+  //   uint32_t rawCode = IrReceiver.decodedIRData.decodedRawData;
 
-    Serial.println(rawCode, HEX); // just to see it still
+  //   Serial.println(rawCode, HEX); // just to see it still
 
-    // Example: check if "Power" button was pressed
-    if (rawCode == 0x9F600707) { // forward
-      motor1.moveMotor(1, 255);
-      motor2.moveMotor(1, 255);
-      // do something
-    }
-    else if (rawCode == 0x9E610707) { // backward
-      motor1.moveMotor(0, 255);
-      motor2.moveMotor(0, 255);
-    }
-    else if(rawCode == 0x9D620707){ // right
-      motor1.moveMotor(0, 255);
-      motor2.moveMotor(1, 255);
-    }
-    else if(rawCode == 0x9A650707){ // left
-      motor1.moveMotor(1, 255);
-      motor2.moveMotor(0, 255);
-    }
-    else { // left
-      motor1.moveMotor(1, 0);
-      motor2.moveMotor(1, 0);
-    }
-    IrReceiver.resume(); // Ready for next signal
-  }
-  int nSpeed = computePid(160 , 0 , 100); // Kp - Ki - Kd
+  //   // Example: check if "Power" button was pressed
+  //   if (rawCode == 0x9F600707) { // forward
+  //     motor1.moveMotor(1, 255);
+  //     motor2.moveMotor(1, 255);
+  //     // do something
+  //   }
+  //   else if (rawCode == 0x9E610707) { // backward
+  //     motor1.moveMotor(0, 255);
+  //     motor2.moveMotor(0, 255);
+  //   }
+  //   else if(rawCode == 0x9D620707){ // right
+  //     motor1.moveMotor(0, 255);
+  //     motor2.moveMotor(1, 255);
+  //   }
+  //   else if(rawCode == 0x9A650707){ // left
+  //     motor1.moveMotor(1, 255);
+  //     motor2.moveMotor(0, 255);
+  //   }
+  //   else { // left
+  //     motor1.moveMotor(1, 0);
+  //     motor2.moveMotor(1, 0);
+  //   }
+  //   IrReceiver.resume(); // Ready for next signal
+  // }
+  int nSpeed = computePid(21 , 3 , 8); // Kd = 21 | Ki = 3 | Kd = 8
   int direction = 1;
   if(nSpeed < 0)
   {
