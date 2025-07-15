@@ -68,10 +68,11 @@ int computePid(float Kp, float Ki, float Kd) {
   
   error = (setpoint - input) * 3;
   if (abs(error) < 2.0) {
+    integral += error * deltaTime * 1.5;
     return 0;
   }
-    integral += error * deltaTime;
-    // integral*= 3;
+    integral += error * deltaTime * 1.5;
+    
     derivative = -gyroRate; // use gyro as angular velocity for Kd
 
     output = Kp * error + Ki * integral + Kd * derivative;
@@ -113,7 +114,7 @@ void loop() {
   //   }
   //   IrReceiver.resume(); // Ready for next signal
   // }
-  int nSpeed = computePid(21 , 5 , 15); // Kp = 21 | Ki = 5 | Kd = 15
+  int nSpeed = computePid(21 , 5, 32); // Kp = 21 | Ki = 5 | Kd = 15
   int direction = 1;
   if(nSpeed < 0)
   {
