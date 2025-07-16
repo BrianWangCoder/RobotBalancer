@@ -114,7 +114,7 @@ void loop() {
   //   }
   //   IrReceiver.resume(); // Ready for next signal
   // }
-  int nSpeed = computePid(21 , 5, 32); // Kp = 21 | Ki = 5 | Kd = 15
+  int nSpeed = computePid(24 , 9, 100); // Kp = 21 | Ki = 5 | Kd = 100
   int direction = 1;
   if(nSpeed < 0)
   {
