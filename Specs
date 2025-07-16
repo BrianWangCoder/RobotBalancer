@@ -1,0 +1,15 @@
+Project: Two-Wheeled Self-Balancing Robot  
+Design Version: v1.3  
+Date: 16 July 2025
+
+Key Specs:
+- Max Load: 1.5kg
+- Motors: 130 RPM DC gear motors
+- Sensor: MPU6050 for tilt detection
+- Controller: Arduino Nano
+- Control Algorithm: PID
+- Battery: 6V x2 (Connected in series for combined voltage)
+- Size: 10x15x20cm
+Constraints:
+- Must balance within ±5° tilt
+- Must balance for a minimum of 20 seconds without falling
