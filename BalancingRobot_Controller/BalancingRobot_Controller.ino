@@ -75,7 +75,7 @@ int computePid(float Kp, float Ki, float Kd) {
   input = getTiltAngle();
   error = setpoint - input;
 
-  if (abs(error) < 1.5) return 0;
+  if (abs(error) < 1) return 0;
 
   integral += error * deltaTime;
   derivative = (error - lastError) / deltaTime;
