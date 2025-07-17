@@ -1,22 +1,18 @@
-// #include "ServoController.h"
 #include "MotorController.h"
 #include <IRremote.hpp>
 #include <Wire.h>
-#include <MPU6050.h>
+#include <MPU6050_6Axis_MotionApps20.h>
 
 MPU6050 mpu;
+
 #define IR_RECEIVE_PIN 8
 
 MotorController motor1(1);
 MotorController motor2(2);
 
-float setpoint = 2;      // Desired target value 
-float input = 0;         // Current value from sensor
-float output = 0;        // Output to actuator 
-
-// float Kp = 1.5;
-// float Ki = 1;
-// float Kd = 0.1;
+float setpoint = 3; 
+float input = 0;
+float output = 0;
 
 float error;
 float lastError = 0;
@@ -25,106 +21,88 @@ float derivative;
 
 unsigned long lastTime;
 
+Quaternion q;
+VectorFloat gravity;
+float ypr[3];
+
+uint8_t fifoBuffer[64];      
+uint16_t packetSize;        
+
 void setup() {
-  // Serial.begin(115200); // // Establish serial communication
-  // IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK); // Start the receiver
+  Serial.begin(115200);
   Wire.begin();
   mpu.initialize();
-  // if (!mpu.testConnection()) {
-  //   Serial.println("MPU6050 connection failed!");
-  //   while (1);
-  // }
-  // Serial.println("MPU6050 ready");
+
+  if (!mpu.testConnection()) {
+    Serial.println("MPU6050 connection failed!");
+    while (1);
+  }
+
+  Serial.println("Initializing DMP...");
+  if (mpu.dmpInitialize() != 0) {
+    Serial.println("DMP init failed");
+    while (1);
+  }
+
+  mpu.setXGyroOffset(220);
+  mpu.setYGyroOffset(76);
+  mpu.setZGyroOffset(-85);
+  mpu.setZAccelOffset(1788);
+
+  mpu.setDMPEnabled(true);
+  packetSize = mpu.dmpGetFIFOPacketSize();
+
+  Serial.println("DMP ready!");
   lastTime = millis();
 }
-float getTiltAngle(float gyroRate, float deltaTime) {
-  static float angle = 0;
-  static float alpha = 0.96;
 
-  int16_t accXraw = mpu.getAccelerationX();
-  int16_t accZraw = mpu.getAccelerationZ();
-
-  float accX = accXraw / 16384.0;
-  float accZ = accZraw / 16384.0;
-
-  float accAngle = atan2(accX, accZ) * 180 / PI;
-
-  angle = alpha * (angle + gyroRate * deltaTime) + (1 - alpha) * accAngle;
-  // Serial.print("Angle = ");
-  // Serial.println(angle);  // Kp - Ki - Kd
-  return angle;
+float getTiltAngle() {
+  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) {
+    mpu.dmpGetQuaternion(&q, fifoBuffer);
+    mpu.dmpGetGravity(&gravity, &q);
+    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    float pitch = ypr[1] * 180 / M_PI; // Convert to degrees
+    return pitch;
+  }
+  return input; 
 }
 
 int computePid(float Kp, float Ki, float Kd) {
-  static unsigned long lastTime = millis();
   unsigned long now = millis();
   float deltaTime = (now - lastTime) / 1000.0;
   lastTime = now;
 
-  int16_t gyroXraw = mpu.getRotationX();
-  float gyroRate = gyroXraw / 131.0;
+  input = getTiltAngle();
+  error = setpoint - input;
 
-  input = getTiltAngle(gyroRate, deltaTime);
-  
-  error = (setpoint - input) * 3;
-  if (abs(error) < 2.0) {
-    integral += error * deltaTime * 1.5;
-    return 0;
-  }
-    integral += error * deltaTime * 1.5;
-    
-    derivative = -gyroRate; // use gyro as angular velocity for Kd
+  if (abs(error) < 1.5) return 0;
 
-    output = Kp * error + Ki * integral + Kd * derivative;
-    output = constrain(output, -255, 255);
-  // lastError = error;
+  integral += error * deltaTime;
+  derivative = (error - lastError) / deltaTime;
+  lastError = error;
+
+  output = Kp * error + Ki * integral + Kd * derivative;
+  output = constrain(output, -255, 255);
 
   return output;
 }
 
 void loop() {
+  int nSpeed = computePid(15 , 0, 2); // Kp = 15 , Ki = 0 , Kd = 2
 
-  
-  //   if (IrReceiver.decode()) {
-  //   uint32_t rawCode = IrReceiver.decodedIRData.decodedRawData;
-
-  //   Serial.println(rawCode, HEX); // just to see it still
-
-  //   // Example: check if "Power" button was pressed
-  //   if (rawCode == 0x9F600707) { // forward
-  //     motor1.moveMotor(1, 255);
-  //     motor2.moveMotor(1, 255);
-  //     // do something
-  //   }
-  //   else if (rawCode == 0x9E610707) { // backward
-  //     motor1.moveMotor(0, 255);
-  //     motor2.moveMotor(0, 255);
-  //   }
-  //   else if(rawCode == 0x9D620707){ // right
-  //     motor1.moveMotor(0, 255);
-  //     motor2.moveMotor(1, 255);
-  //   }
-  //   else if(rawCode == 0x9A650707){ // left
-  //     motor1.moveMotor(1, 255);
-  //     motor2.moveMotor(0, 255);
-  //   }
-  //   else { // left
-  //     motor1.moveMotor(1, 0);
-  //     motor2.moveMotor(1, 0);
-  //   }
-  //   IrReceiver.resume(); // Ready for next signal
-  // }
-  int nSpeed = computePid(24 , 9, 100); // Kp = 21 | Ki = 5 | Kd = 100
   int direction = 1;
-  if(nSpeed < 0)
-  {
+  if (nSpeed < 0) {
     direction = 0;
-    nSpeed = abs(nSpeed); 
+    nSpeed = abs(nSpeed);
   }
+
   motor1.moveMotor(direction, nSpeed);
   motor2.moveMotor(direction, nSpeed);
-  
-  // Serial.print(" | ");
-  // Serial.print("Output = ");
-  // Serial.println(nSpeed);  // Kp - Ki - Kd
+
+  Serial.print("Pitch: ");
+  Serial.print(input);
+  Serial.print(" | Output: ");
+  Serial.println(nSpeed);
+
+  delay(5);
 }

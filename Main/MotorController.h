@@ -2,27 +2,22 @@
 #define MOTORCONTROLLER_H
 class MotorController {
   private:
-    int directionPin2;
-    int directionPin1;
+    int directionPin;
     int speedPin;
 
   public:
     MotorController(int motorNumber) {
       switch(motorNumber){
         case 1:
-          directionPin1 = 3;
-          directionPin2 = 2;
-          speedPin = 9;
-          pinMode(directionPin1,OUTPUT);
-          pinMode(directionPin2,OUTPUT);
+          directionPin = 4;
+          speedPin = 5;
+          pinMode(directionPin,OUTPUT);
           pinMode(speedPin,OUTPUT);
         break;
         case 2:
-          directionPin1 = 4;
-          directionPin2 = 5;
-          speedPin = 10;
-          pinMode(directionPin1,OUTPUT);
-          pinMode(directionPin2,OUTPUT);
+          directionPin = 7;
+          speedPin = 6;
+          pinMode(directionPin,OUTPUT);
           pinMode(speedPin,OUTPUT);
         break;
       }
@@ -30,8 +25,7 @@ class MotorController {
     }
 
     void moveMotor(int direction,int speed){
-      digitalWrite(directionPin1,direction);
-      digitalWrite(directionPin2,!direction);
+      digitalWrite(directionPin,direction);
       analogWrite(speedPin,speed);
     }
 };
