@@ -88,7 +88,7 @@ int computePid(float Kp, float Ki, float Kd) {
 }
 
 void loop() {
-  int nSpeed = computePid(15 , 0, 2); // Kp = 15 , Ki = 0 , Kd = 2 
+  int nSpeed = computePid(24 , 17, 2.7); // Kp = 23 , Ki = 17 , Kd = 2-3  = 2.7
 
   int direction = 1;
   if (nSpeed < 0) {
